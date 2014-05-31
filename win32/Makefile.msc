@@ -13,46 +13,84 @@
 #
 TOP = .
 
+!IF "$(ARCH)"=="x86"
 # optional build flags
-LOC =
+
+LOC = -DASMV -DASMINF
+AS = ml -coff
+OBJA = inffas32.obj match686.obj
+
+!ELSE IF "$(ARCH)"=="x64"
+
+LOC = -DASMV -DASMINF -I.
+AS = ml64
+OBJA = inffasx64.obj gvmat64.obj inffas8664.obj
+
+!ENDIF
 
 # variables
+
+BASE_SHARED_NAME=zlib1-vc$(MSVCVER)-mt-$(ARCH)
+SHAREDLIB = $(BASE_SHARED_NAME).dll
+SHAREDPDB = $(BASE_SHARED_NAME).pdb
 STATICLIB = zlib.lib
-SHAREDLIB = zlib1.dll
 IMPLIB    = zdll.lib
 
 CC = cl
-AS = ml
 LD = link
 AR = lib
 RC = rc
-CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Zi -Fd"zlib" $(LOC)
+CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Z7 -Fd"zlib" $(LOC)
 WFLAGS  = -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
-ASFLAGS = -coff -Zi $(LOC)
+ASFLAGS = -nologo -Zi $(LOC)
 LDFLAGS = -nologo -debug -incremental:no -opt:ref
 ARFLAGS = -nologo
-RCFLAGS = /dWIN32 /r
+RCFLAGS = /nologo /dWIN32 /r /d "DLL_NAME=\"$(SHAREDLIB)\""
 
 OBJS = adler32.obj compress.obj crc32.obj deflate.obj gzclose.obj gzlib.obj gzread.obj \
        gzwrite.obj infback.obj inflate.obj inftrees.obj inffast.obj trees.obj uncompr.obj zutil.obj
-OBJA =
-
-
+       
 # targets
-all: $(STATICLIB) $(SHAREDLIB) $(IMPLIB) \
-     example.exe minigzip.exe example_d.exe minigzip_d.exe
+# all: $(STATICLIB) $(SHAREDLIB) $(IMPLIB) \
+     # example.exe minigzip.exe example_d.exe minigzip_d.exe
 
+!IF ! DEFINED(INSTALL_ROOT)
+INSTALL_ROOT=j:\dev\opt-vc$(MSVCVER)-$(ARCH)\zlib
+!ENDIF
+
+INSTALL_BIN=$(INSTALL_ROOT)\bin
+INSTALL_LIB=$(INSTALL_ROOT)\lib
+INSTALL_INC=$(INSTALL_ROOT)\include
+     
+all: $(SHAREDLIB) $(IMPLIB) \
+     example_d.exe minigzip_d.exe
+
+install: all
+    -MD $(INSTALL_BIN) $(INSTALL_LIB) $(INSTALL_INC)
+    XCOPY /Y /F $(SHAREDLIB) $(INSTALL_BIN)
+    XCOPY /Y /F $(SHAREDPDB) $(INSTALL_BIN)
+    XCOPY /Y /F $(IMPLIB) $(INSTALL_LIB)
+    COPY /Y $(INSTALL_LIB)\$(IMPLIB) $(INSTALL_LIB)\zlib.dll.lib
+    XCOPY /Y /F /I $(TOP)\zlib.h $(INSTALL_INC)
+    XCOPY /Y /F /I $(TOP)\zconf.h $(INSTALL_INC)
+    
 $(STATICLIB): $(OBJS) $(OBJA)
 	$(AR) $(ARFLAGS) -out:$@ $(OBJS) $(OBJA)
 
 $(IMPLIB): $(SHAREDLIB)
 
-$(SHAREDLIB): $(TOP)/win32/zlib.def $(OBJS) $(OBJA) zlib1.res
-	$(LD) $(LDFLAGS) -def:$(TOP)/win32/zlib.def -dll -implib:$(IMPLIB) \
-	  -out:$@ -base:0x5A4C0000 $(OBJS) $(OBJA) zlib1.res
+# $(SHAREDLIB): $(TOP)/win32/zlib.def $(OBJS) $(OBJA) zlib1.res
+	# $(LD) $(LDFLAGS) -def:$(TOP)/win32/zlib.def -dll -implib:$(IMPLIB) \
+	  # -out:$@ -base:0x5A4C0000 $(OBJS) $(OBJA) zlib1.res
+	# if exist $@.manifest \
+	  # mt -nologo -manifest $@.manifest -outputresource:$@;2
+
+$(SHAREDLIB): $(OBJS) $(OBJA) zlib1.res
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) \
+	  -out:$@ $(OBJS) $(OBJA) zlib1.res
 	if exist $@.manifest \
 	  mt -nologo -manifest $@.manifest -outputresource:$@;2
-
+      
 example.exe: example.obj $(STATICLIB)
 	$(LD) $(LDFLAGS) example.obj $(STATICLIB)
 	if exist $@.manifest \
@@ -151,9 +189,8 @@ testdll: example_d.exe minigzip_d.exe
 
 # cleanup
 clean:
-	-del $(STATICLIB)
-	-del $(SHAREDLIB)
-	-del $(IMPLIB)
+	-del *.dll
+	-del *.lib
 	-del *.obj
 	-del *.res
 	-del *.exp
