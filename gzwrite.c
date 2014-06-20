@@ -6,13 +6,13 @@
 #include "gzguts.h"
 
 /* Local functions */
-local int gz_init OF((gz_statep));
-local int gz_comp OF((gz_statep, int));
-local int gz_zero OF((gz_statep, z_off64_t));
+static int gz_init (gz_statep);
+static int gz_comp (gz_statep, int);
+static int gz_zero (gz_statep, z_off64_t);
 
 /* Initialize state for writing a gzip file.  Mark initialization by setting
    state->size to non-zero.  Return -1 on failure or 0 on success. */
-local int gz_init(state)
+static int gz_init(state)
     gz_statep state;
 {
     int ret;
@@ -67,7 +67,7 @@ local int gz_init(state)
    then the deflate() state is reset to start a new gzip stream.  If gz->direct
    is true, then simply write to the output file without compressing, and
    ignore flush. */
-local int gz_comp(state, flush)
+static int gz_comp(state, flush)
     gz_statep state;
     int flush;
 {
@@ -130,7 +130,7 @@ local int gz_comp(state, flush)
 }
 
 /* Compress len zeros to output.  Return -1 on error, 0 on success. */
-local int gz_zero(state, len)
+static int gz_zero(state, len)
     gz_statep state;
     z_off64_t len;
 {
@@ -162,7 +162,7 @@ local int gz_zero(state, len)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzwrite(file, buf, len)
+int gzwrite(file, buf, len)
     gzFile file;
     voidpc buf;
     unsigned len;
@@ -242,7 +242,7 @@ int ZEXPORT gzwrite(file, buf, len)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzputc(file, c)
+int gzputc(file, c)
     gzFile file;
     int c;
 {
@@ -290,7 +290,7 @@ int ZEXPORT gzputc(file, c)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzputs(file, str)
+int gzputs(file, str)
     gzFile file;
     const char *str;
 {
@@ -303,11 +303,10 @@ int ZEXPORT gzputs(file, str)
     return ret == 0 && len != 0 ? -1 : ret;
 }
 
-#if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #include <stdarg.h>
 
 /* -- see zlib.h -- */
-int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
+int gzvprintf(gzFile file, const char *format, va_list va)
 {
     int size, len;
     gz_statep state;
@@ -341,22 +340,7 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
     /* do the printf() into the input buffer, put length in len */
     size = (int)(state->size);
     state->in[size - 1] = 0;
-#ifdef NO_vsnprintf
-#  ifdef HAS_vsprintf_void
-    (void)vsprintf((char *)(state->in), format, va);
-    for (len = 0; len < size; len++)
-        if (state->in[len] == 0) break;
-#  else
-    len = vsprintf((char *)(state->in), format, va);
-#  endif
-#else
-#  ifdef HAS_vsnprintf_void
-    (void)vsnprintf((char *)(state->in), size, format, va);
-    len = strlen((char *)(state->in));
-#  else
     len = vsnprintf((char *)(state->in), size, format, va);
-#  endif
-#endif
 
     /* check that printf() results fit in buffer */
     if (len <= 0 || len >= (int)size || state->in[size - 1] != 0)
@@ -369,7 +353,7 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
     return len;
 }
 
-int ZEXPORTVA gzprintf(gzFile file, const char *format, ...)
+int gzprintf(gzFile file, const char *format, ...)
 {
     va_list va;
     int ret;
@@ -380,89 +364,8 @@ int ZEXPORTVA gzprintf(gzFile file, const char *format, ...)
     return ret;
 }
 
-#else /* !STDC && !Z_HAVE_STDARG_H */
-
 /* -- see zlib.h -- */
-int ZEXPORTVA gzprintf (file, format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
-                       a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-    gzFile file;
-    const char *format;
-    int a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
-        a11, a12, a13, a14, a15, a16, a17, a18, a19, a20;
-{
-    int size, len;
-    gz_statep state;
-    z_streamp strm;
-
-    /* get internal structure */
-    if (file == NULL)
-        return -1;
-    state = (gz_statep)file;
-    strm = &(state->strm);
-
-    /* check that can really pass pointer in ints */
-    if (sizeof(int) != sizeof(void *))
-        return 0;
-
-    /* check that we're writing and that there's no error */
-    if (state->mode != GZ_WRITE || state->err != Z_OK)
-        return 0;
-
-    /* make sure we have some buffer space */
-    if (state->size == 0 && gz_init(state) == -1)
-        return 0;
-
-    /* check for seek request */
-    if (state->seek) {
-        state->seek = 0;
-        if (gz_zero(state, state->skip) == -1)
-            return 0;
-    }
-
-    /* consume whatever's left in the input buffer */
-    if (strm->avail_in && gz_comp(state, Z_NO_FLUSH) == -1)
-        return 0;
-
-    /* do the printf() into the input buffer, put length in len */
-    size = (int)(state->size);
-    state->in[size - 1] = 0;
-#ifdef NO_snprintf
-#  ifdef HAS_sprintf_void
-    sprintf((char *)(state->in), format, a1, a2, a3, a4, a5, a6, a7, a8,
-            a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20);
-    for (len = 0; len < size; len++)
-        if (state->in[len] == 0) break;
-#  else
-    len = sprintf((char *)(state->in), format, a1, a2, a3, a4, a5, a6, a7, a8,
-                  a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20);
-#  endif
-#else
-#  ifdef HAS_snprintf_void
-    snprintf((char *)(state->in), size, format, a1, a2, a3, a4, a5, a6, a7, a8,
-             a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20);
-    len = strlen((char *)(state->in));
-#  else
-    len = snprintf((char *)(state->in), size, format, a1, a2, a3, a4, a5, a6,
-                   a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
-                   a19, a20);
-#  endif
-#endif
-
-    /* check that printf() results fit in buffer */
-    if (len <= 0 || len >= (int)size || state->in[size - 1] != 0)
-        return 0;
-
-    /* update buffer and position, defer compression until needed */
-    strm->avail_in = (unsigned)len;
-    strm->next_in = state->in;
-    state->x.pos += len;
-    return len;
-}
-
-#endif
-
-/* -- see zlib.h -- */
-int ZEXPORT gzflush(file, flush)
+int gzflush(file, flush)
     gzFile file;
     int flush;
 {
@@ -494,7 +397,7 @@ int ZEXPORT gzflush(file, flush)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzsetparams(file, level, strategy)
+int gzsetparams(file, level, strategy)
     gzFile file;
     int level;
     int strategy;
@@ -536,7 +439,7 @@ int ZEXPORT gzsetparams(file, level, strategy)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzclose_w(file)
+int gzclose_w(file)
     gzFile file;
 {
     int ret = Z_OK;

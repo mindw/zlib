@@ -70,31 +70,31 @@ typedef enum {
     finish_done     /* finish done, accept no more input or output */
 } block_state;
 
-typedef block_state (*compress_func) OF((deflate_state *s, int flush));
+typedef block_state (*compress_func) (deflate_state *s, int flush);
 /* Compression function. Returns the block state after the call. */
 
-local void fill_window    OF((deflate_state *s));
-local block_state deflate_stored OF((deflate_state *s, int flush));
-local block_state deflate_fast   OF((deflate_state *s, int flush));
+local void fill_window    (deflate_state *s);
+local block_state deflate_stored (deflate_state *s, int flush);
+local block_state deflate_fast   (deflate_state *s, int flush);
 #ifndef FASTEST
-local block_state deflate_slow   OF((deflate_state *s, int flush));
+local block_state deflate_slow   (deflate_state *s, int flush);
 #endif
-local block_state deflate_rle    OF((deflate_state *s, int flush));
-local block_state deflate_huff   OF((deflate_state *s, int flush));
-local void lm_init        OF((deflate_state *s));
-local void putShortMSB    OF((deflate_state *s, uInt b));
-local void flush_pending  OF((z_streamp strm));
-local int read_buf        OF((z_streamp strm, Bytef *buf, unsigned size));
+local block_state deflate_rle    (deflate_state *s, int flush);
+local block_state deflate_huff   (deflate_state *s, int flush);
+local void lm_init        (deflate_state *s);
+local void putShortMSB    (deflate_state *s, uInt b);
+local void flush_pending  (z_streamp strm);
+local int read_buf        (z_streamp strm, Bytef *buf, unsigned size);
 #ifdef ASMV
-      void match_init OF((void)); /* asm code initialization */
-      uInt longest_match  OF((deflate_state *s, IPos cur_match));
+      void match_init (void); /* asm code initialization */
+      uInt longest_match  (deflate_state *s, IPos cur_match);
 #else
-local uInt longest_match  OF((deflate_state *s, IPos cur_match));
+local uInt longest_match  (deflate_state *s, IPos cur_match);
 #endif
 
 #ifdef DEBUG
-local  void check_match OF((deflate_state *s, IPos start, IPos match,
-                            int length));
+local  void check_match (deflate_state *s, IPos start, IPos match,
+                            int length);
 #endif
 
 /* ===========================================================================
@@ -151,10 +151,6 @@ local const config configuration_table[10] = {
 #define EQUAL 0
 /* result of memcmp for equal strings */
 
-#ifndef NO_DUMMY_DECL
-struct static_tree_desc_s {int dummy;}; /* for buggy compilers */
-#endif
-
 /* rank Z_BLOCK between Z_NO_FLUSH and Z_PARTIAL_FLUSH */
 #define RANK(f) (((f) << 1) - ((f) > 4 ? 9 : 0))
 
@@ -198,7 +194,7 @@ struct static_tree_desc_s {int dummy;}; /* for buggy compilers */
     zmemzero((Bytef *)s->head, (unsigned)(s->hash_size-1)*sizeof(*s->head));
 
 /* ========================================================================= */
-int ZEXPORT deflateInit_(strm, level, version, stream_size)
+int deflateInit_(strm, level, version, stream_size)
     z_streamp strm;
     int level;
     const char *version;
@@ -210,7 +206,7 @@ int ZEXPORT deflateInit_(strm, level, version, stream_size)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
+int deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
                   version, stream_size)
     z_streamp strm;
     int  level;
@@ -276,7 +272,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
     s = (deflate_state *) ZALLOC(strm, 1, sizeof(deflate_state));
     if (s == Z_NULL) return Z_MEM_ERROR;
-    strm->state = (struct internal_state FAR *)s;
+    strm->state = (struct internal_state *)s;
     s->strm = strm;
 
     s->wrap = wrap;
@@ -320,7 +316,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
+int deflateSetDictionary (strm, dictionary, dictLength)
     z_streamp strm;
     const Bytef *dictionary;
     uInt  dictLength;
@@ -389,7 +385,7 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateResetKeep (strm)
+int deflateResetKeep (strm)
     z_streamp strm;
 {
     deflate_state *s;
@@ -424,7 +420,7 @@ int ZEXPORT deflateResetKeep (strm)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateReset (strm)
+int deflateReset (strm)
     z_streamp strm;
 {
     int ret;
@@ -436,7 +432,7 @@ int ZEXPORT deflateReset (strm)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateSetHeader (strm, head)
+int deflateSetHeader (strm, head)
     z_streamp strm;
     gz_headerp head;
 {
@@ -447,7 +443,7 @@ int ZEXPORT deflateSetHeader (strm, head)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflatePending (strm, pending, bits)
+int deflatePending (strm, pending, bits)
     unsigned *pending;
     int *bits;
     z_streamp strm;
@@ -461,7 +457,7 @@ int ZEXPORT deflatePending (strm, pending, bits)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflatePrime (strm, bits, value)
+int deflatePrime (strm, bits, value)
     z_streamp strm;
     int bits;
     int value;
@@ -487,7 +483,7 @@ int ZEXPORT deflatePrime (strm, bits, value)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateParams(strm, level, strategy)
+int deflateParams(strm, level, strategy)
     z_streamp strm;
     int level;
     int strategy;
@@ -528,7 +524,7 @@ int ZEXPORT deflateParams(strm, level, strategy)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateTune(strm, good_length, max_lazy, nice_length, max_chain)
+int deflateTune(strm, good_length, max_lazy, nice_length, max_chain)
     z_streamp strm;
     int good_length;
     int max_lazy;
@@ -563,7 +559,7 @@ int ZEXPORT deflateTune(strm, good_length, max_lazy, nice_length, max_chain)
  * upper bound of about 14% expansion does not seem onerous for output buffer
  * allocation.
  */
-uLong ZEXPORT deflateBound(strm, sourceLen)
+uLong deflateBound(strm, sourceLen)
     z_streamp strm;
     uLong sourceLen;
 {
@@ -662,7 +658,7 @@ local void flush_pending(strm)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflate (strm, flush)
+int deflate (strm, flush)
     z_streamp strm;
     int flush;
 {
@@ -976,7 +972,7 @@ int ZEXPORT deflate (strm, flush)
 }
 
 /* ========================================================================= */
-int ZEXPORT deflateEnd (strm)
+int deflateEnd (strm)
     z_streamp strm;
 {
     int status;
@@ -1008,16 +1004,11 @@ int ZEXPORT deflateEnd (strm)
 
 /* =========================================================================
  * Copy the source state to the destination state.
- * To simplify the source, this is not supported for 16-bit MSDOS (which
- * doesn't have enough memory anyway to duplicate compression states).
  */
-int ZEXPORT deflateCopy (dest, source)
+int deflateCopy (dest, source)
     z_streamp dest;
     z_streamp source;
 {
-#ifdef MAXSEG_64K
-    return Z_STREAM_ERROR;
-#else
     deflate_state *ds;
     deflate_state *ss;
     ushf *overlay;
@@ -1033,7 +1024,7 @@ int ZEXPORT deflateCopy (dest, source)
 
     ds = (deflate_state *) ZALLOC(dest, 1, sizeof(deflate_state));
     if (ds == Z_NULL) return Z_MEM_ERROR;
-    dest->state = (struct internal_state FAR *) ds;
+    dest->state = (struct internal_state *) ds;
     zmemcpy((voidpf)ds, (voidpf)ss, sizeof(deflate_state));
     ds->strm = dest;
 
@@ -1048,7 +1039,6 @@ int ZEXPORT deflateCopy (dest, source)
         deflateEnd (dest);
         return Z_MEM_ERROR;
     }
-    /* following zmemcpy do not work for 16-bit MSDOS */
     zmemcpy(ds->window, ss->window, ds->w_size * 2 * sizeof(Byte));
     zmemcpy((voidpf)ds->prev, (voidpf)ss->prev, ds->w_size * sizeof(Pos));
     zmemcpy((voidpf)ds->head, (voidpf)ss->head, ds->hash_size * sizeof(Pos));
@@ -1063,7 +1053,6 @@ int ZEXPORT deflateCopy (dest, source)
     ds->bl_desc.dyn_tree = ds->bl_tree;
 
     return Z_OK;
-#endif /* MAXSEG_64K */
 }
 
 /* ===========================================================================
@@ -1153,7 +1142,7 @@ local uInt longest_match(s, cur_match)
     register Bytef *scan = s->window + s->strstart; /* current string */
     register Bytef *match;                       /* matched string */
     register int len;                           /* length of current match */
-    int best_len = s->prev_length;              /* best match length so far */
+    int best_len = s->prev_length;              /* best match length so */
     int nice_match = s->nice_match;             /* stop if match long enough */
     IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
         s->strstart - (IPos)MAX_DIST(s) : NIL;

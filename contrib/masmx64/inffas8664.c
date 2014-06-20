@@ -83,14 +83,14 @@
 /* ar offset                              register */
 /*  0    0 */ void *esp;                /* esp save */
 /*  8    4 */ void *ebp;                /* ebp save */
-/* 16    8 */ unsigned char FAR *in;    /* esi rsi  local strm->next_in */
-/* 24   12 */ unsigned char FAR *last;  /*     r9   while in < last */
-/* 32   16 */ unsigned char FAR *out;   /* edi rdi  local strm->next_out */
-/* 40   20 */ unsigned char FAR *beg;   /*          inflate()'s init next_out */
-/* 48   24 */ unsigned char FAR *end;   /*     r10  while out < end */
-/* 56   28 */ unsigned char FAR *window;/*          size of window, wsize!=0 */
-/* 64   32 */ code const FAR *lcode;    /* ebp rbp  local strm->lencode */
-/* 72   36 */ code const FAR *dcode;    /*     r11  local strm->distcode */
+/* 16    8 */ z_const unsigned char *in;    /* esi rsi  local strm->next_in */
+/* 24   12 */ z_const unsigned char *last;  /*     r9   while in < last */
+/* 32   16 */ unsigned char *out;   /* edi rdi  local strm->next_out */
+/* 40   20 */ unsigned char *beg;   /*          inflate()'s init next_out */
+/* 48   24 */ unsigned char *end;   /*     r10  while out < end */
+/* 56   28 */ unsigned char *window;/*          size of window, wsize!=0 */
+/* 64   32 */ code const *lcode;    /* ebp rbp  local strm->lencode */
+/* 72   36 */ code const *dcode;    /*     r11  local strm->distcode */
 /* 80   40 */ size_t /*unsigned long */hold;       /* edx rdx  local strm->hold */
 /* 88   44 */ unsigned bits;            /* ebx rbx  local strm->bits */
 /* 92   48 */ unsigned wsize;           /*          window size */
@@ -107,7 +107,7 @@ void inflate_fast(strm, start)
 z_streamp strm;
 unsigned start;         /* inflate()'s starting value for strm->avail_out */
 {
-    struct inflate_state FAR *state;
+    struct inflate_state *state;
     type_ar ar;
     void inffas8664fnc(struct inffast_ar * par);
 
@@ -122,7 +122,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
 #endif
 
     /* copy state to local variables */
-    state = (struct inflate_state FAR *)strm->state;
+    state = (struct inflate_state *)strm->state;
 
     ar.in = strm->next_in;
     ar.last = ar.in + (strm->avail_in - PAD_AVAIL_IN);
@@ -156,7 +156,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
         else if (ar.status == 3)
             strm->msg = "invalid distance code";
         else
-            strm->msg = "invalid distance too far back";
+            strm->msg = "invalid distance too back";
         state->mode = BAD;
     }
     else if ( ar.status == 1 ) {

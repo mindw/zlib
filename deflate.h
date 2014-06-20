@@ -71,7 +71,7 @@ typedef struct ct_data_s {
         ush  dad;        /* father node in Huffman tree */
         ush  len;        /* length of bit string */
     } dl;
-} FAR ct_data;
+} ct_data;
 
 #define Freq fc.freq
 #define Code fc.code
@@ -84,10 +84,10 @@ typedef struct tree_desc_s {
     ct_data *dyn_tree;           /* the dynamic tree */
     int     max_code;            /* largest code with non zero frequency */
     static_tree_desc *stat_desc; /* the corresponding static tree */
-} FAR tree_desc;
+} tree_desc;
 
 typedef ush Pos;
-typedef Pos FAR Posf;
+typedef Pos Posf;
 typedef unsigned IPos;
 
 /* A Pos is an index in the character window. We use short instead of int to
@@ -119,7 +119,7 @@ typedef struct internal_state {
      * bytes. With this organization, matches are limited to a distance of
      * wSize-MAX_MATCH bytes, but this ensures that IO is always
      * performed with a length multiple of the block size. Also, it limits
-     * the window size to 64K, which is quite useful on MSDOS.
+     * the window size to 64K.
      * To do: use the user input buffer as sliding window.
      */
 
@@ -270,7 +270,7 @@ typedef struct internal_state {
      * updated to the new high water mark.
      */
 
-} FAR deflate_state;
+} deflate_state;
 
 /* Output a byte on the stream.
  * IN assertion: there is enough room in pending_buf.
@@ -293,14 +293,14 @@ typedef struct internal_state {
    memory checker errors from longest match routines */
 
         /* in trees.c */
-void ZLIB_INTERNAL _tr_init OF((deflate_state *s));
-int ZLIB_INTERNAL _tr_tally OF((deflate_state *s, unsigned dist, unsigned lc));
-void ZLIB_INTERNAL _tr_flush_block OF((deflate_state *s, charf *buf,
-                        ulg stored_len, int last));
-void ZLIB_INTERNAL _tr_flush_bits OF((deflate_state *s));
-void ZLIB_INTERNAL _tr_align OF((deflate_state *s));
-void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
-                        ulg stored_len, int last));
+void ZLIB_INTERNAL _tr_init(deflate_state *s);
+int ZLIB_INTERNAL _tr_tally(deflate_state *s, unsigned dist, unsigned lc);
+void ZLIB_INTERNAL _tr_flush_block(deflate_state *s, charf *buf,
+                        ulg stored_len, int last);
+void ZLIB_INTERNAL _tr_flush_bits(deflate_state *s);
+void ZLIB_INTERNAL _tr_align(deflate_state *s);
+void ZLIB_INTERNAL _tr_stored_block(deflate_state *s, charf *buf,
+                        ulg stored_len, int last);
 
 #define d_code(dist) \
    ((dist) < 256 ? _dist_code[dist] : _dist_code[256+((dist)>>7)])
@@ -312,7 +312,7 @@ void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
 #ifndef DEBUG
 /* Inline versions of _tr_tally for speed: */
 
-#if defined(GEN_TREES_H) || !defined(STDC)
+#if defined(GEN_TREES_H)
   extern uch ZLIB_INTERNAL _length_code[];
   extern uch ZLIB_INTERNAL _dist_code[];
 #else

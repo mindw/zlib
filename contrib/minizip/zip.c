@@ -21,6 +21,7 @@
 
 */
 
+#define ZLIB_INTERNAL
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,11 +30,10 @@
 #include "zlib.h"
 #include "zip.h"
 
-#ifdef STDC
-#  include <stddef.h>
-#  include <string.h>
-#  include <stdlib.h>
-#endif
+#include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
+
 #ifdef NO_ERRNO_H
     extern int errno;
 #else
@@ -283,7 +283,7 @@ local int add_data_in_datablock(linkedlist_data* ll, const void* buf, uLong len)
    nbByte == 1, 2 ,4 or 8 (byte, short or long, ZPOS64_T)
 */
 
-local int zip64local_putValue OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T x, int nbByte));
+local int zip64local_putValue (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T x, int nbByte);
 local int zip64local_putValue (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T x, int nbByte)
 {
     unsigned char buf[8];
@@ -307,7 +307,7 @@ local int zip64local_putValue (const zlib_filefunc64_32_def* pzlib_filefunc_def,
         return ZIP_OK;
 }
 
-local void zip64local_putValue_inmemory OF((void* dest, ZPOS64_T x, int nbByte));
+local void zip64local_putValue_inmemory (void* dest, ZPOS64_T x, int nbByte);
 local void zip64local_putValue_inmemory (void* dest, ZPOS64_T x, int nbByte)
 {
     unsigned char* buf=(unsigned char*)dest;
@@ -344,7 +344,7 @@ local uLong zip64local_TmzDateToDosDate(const tm_zip* ptm)
 
 /****************************************************************************/
 
-local int zip64local_getByte OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, int *pi));
+local int zip64local_getByte (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, int *pi);
 
 local int zip64local_getByte(const zlib_filefunc64_32_def* pzlib_filefunc_def,voidpf filestream,int* pi)
 {
@@ -368,7 +368,7 @@ local int zip64local_getByte(const zlib_filefunc64_32_def* pzlib_filefunc_def,vo
 /* ===========================================================================
    Reads a long in LSB order from the given gz_stream. Sets
 */
-local int zip64local_getShort OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong *pX));
+local int zip64local_getShort (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong *pX);
 
 local int zip64local_getShort (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong* pX)
 {
@@ -390,7 +390,7 @@ local int zip64local_getShort (const zlib_filefunc64_32_def* pzlib_filefunc_def,
     return err;
 }
 
-local int zip64local_getLong OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong *pX));
+local int zip64local_getLong (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong *pX);
 
 local int zip64local_getLong (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, uLong* pX)
 {
@@ -420,7 +420,7 @@ local int zip64local_getLong (const zlib_filefunc64_32_def* pzlib_filefunc_def, 
     return err;
 }
 
-local int zip64local_getLong64 OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T *pX));
+local int zip64local_getLong64 (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T *pX);
 
 
 local int zip64local_getLong64 (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T *pX)
@@ -475,7 +475,7 @@ local int zip64local_getLong64 (const zlib_filefunc64_32_def* pzlib_filefunc_def
   Locate the Central directory of a zipfile (at the end, just before
     the global comment)
 */
-local ZPOS64_T zip64local_SearchCentralDir OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream));
+local ZPOS64_T zip64local_SearchCentralDir (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream);
 
 local ZPOS64_T zip64local_SearchCentralDir(const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream)
 {
@@ -537,7 +537,7 @@ local ZPOS64_T zip64local_SearchCentralDir(const zlib_filefunc64_32_def* pzlib_f
 Locate the End of Zip64 Central directory locator and from there find the CD of a zipfile (at the end, just before
 the global comment)
 */
-local ZPOS64_T zip64local_SearchCentralDir64 OF((const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream));
+local ZPOS64_T zip64local_SearchCentralDir64 (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream);
 
 local ZPOS64_T zip64local_SearchCentralDir64(const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream)
 {
@@ -846,7 +846,7 @@ int LoadCentralDirectoryRecord(zip64_internal* pziinit)
 
 
 /************************************************************/
-extern zipFile ZEXPORT zipOpen3 (const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_32_def* pzlib_filefunc64_32_def)
+extern zipFile zipOpen3 (const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_32_def* pzlib_filefunc64_32_def)
 {
     zip64_internal ziinit;
     zip64_internal* zi;
@@ -917,7 +917,7 @@ extern zipFile ZEXPORT zipOpen3 (const void *pathname, int append, zipcharpc* gl
     }
 }
 
-extern zipFile ZEXPORT zipOpen2 (const char *pathname, int append, zipcharpc* globalcomment, zlib_filefunc_def* pzlib_filefunc32_def)
+extern zipFile zipOpen2 (const char *pathname, int append, zipcharpc* globalcomment, zlib_filefunc_def* pzlib_filefunc32_def)
 {
     if (pzlib_filefunc32_def != NULL)
     {
@@ -929,7 +929,7 @@ extern zipFile ZEXPORT zipOpen2 (const char *pathname, int append, zipcharpc* gl
         return zipOpen3(pathname, append, globalcomment, NULL);
 }
 
-extern zipFile ZEXPORT zipOpen2_64 (const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_def* pzlib_filefunc_def)
+extern zipFile zipOpen2_64 (const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_def* pzlib_filefunc_def)
 {
     if (pzlib_filefunc_def != NULL)
     {
@@ -945,12 +945,12 @@ extern zipFile ZEXPORT zipOpen2_64 (const void *pathname, int append, zipcharpc*
 
 
 
-extern zipFile ZEXPORT zipOpen (const char* pathname, int append)
+extern zipFile zipOpen (const char* pathname, int append)
 {
     return zipOpen3((const void*)pathname,append,NULL,NULL);
 }
 
-extern zipFile ZEXPORT zipOpen64 (const void* pathname, int append)
+extern zipFile zipOpen64 (const void* pathname, int append)
 {
     return zipOpen3(pathname,append,NULL,NULL);
 }
@@ -1052,7 +1052,7 @@ int Write_LocalFileHeader(zip64_internal* zi, const char* filename, uInt size_ex
  It is not done here because then we need to realloc a new buffer since parameters are 'const' and I want to minimize
  unnecessary allocations.
  */
-extern int ZEXPORT zipOpenNewFileInZip4_64 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip4_64 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                          const void* extrafield_local, uInt size_extrafield_local,
                                          const void* extrafield_global, uInt size_extrafield_global,
                                          const char* comment, int method, int level, int raw,
@@ -1262,7 +1262,7 @@ extern int ZEXPORT zipOpenNewFileInZip4_64 (zipFile file, const char* filename, 
     return err;
 }
 
-extern int ZEXPORT zipOpenNewFileInZip4 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip4 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                          const void* extrafield_local, uInt size_extrafield_local,
                                          const void* extrafield_global, uInt size_extrafield_global,
                                          const char* comment, int method, int level, int raw,
@@ -1278,7 +1278,7 @@ extern int ZEXPORT zipOpenNewFileInZip4 (zipFile file, const char* filename, con
                                  password, crcForCrypting, versionMadeBy, flagBase, 0);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip3 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip3 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                          const void* extrafield_local, uInt size_extrafield_local,
                                          const void* extrafield_global, uInt size_extrafield_global,
                                          const char* comment, int method, int level, int raw,
@@ -1293,7 +1293,7 @@ extern int ZEXPORT zipOpenNewFileInZip3 (zipFile file, const char* filename, con
                                  password, crcForCrypting, VERSIONMADEBY, 0, 0);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip3_64(zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip3_64(zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                          const void* extrafield_local, uInt size_extrafield_local,
                                          const void* extrafield_global, uInt size_extrafield_global,
                                          const char* comment, int method, int level, int raw,
@@ -1308,7 +1308,7 @@ extern int ZEXPORT zipOpenNewFileInZip3_64(zipFile file, const char* filename, c
                                  password, crcForCrypting, VERSIONMADEBY, 0, zip64);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip2(zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip2(zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                         const void* extrafield_local, uInt size_extrafield_local,
                                         const void* extrafield_global, uInt size_extrafield_global,
                                         const char* comment, int method, int level, int raw)
@@ -1321,7 +1321,7 @@ extern int ZEXPORT zipOpenNewFileInZip2(zipFile file, const char* filename, cons
                                  NULL, 0, VERSIONMADEBY, 0, 0);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip2_64(zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip2_64(zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                         const void* extrafield_local, uInt size_extrafield_local,
                                         const void* extrafield_global, uInt size_extrafield_global,
                                         const char* comment, int method, int level, int raw, int zip64)
@@ -1334,7 +1334,7 @@ extern int ZEXPORT zipOpenNewFileInZip2_64(zipFile file, const char* filename, c
                                  NULL, 0, VERSIONMADEBY, 0, zip64);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip64 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip64 (zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                         const void* extrafield_local, uInt size_extrafield_local,
                                         const void*extrafield_global, uInt size_extrafield_global,
                                         const char* comment, int method, int level, int zip64)
@@ -1347,7 +1347,7 @@ extern int ZEXPORT zipOpenNewFileInZip64 (zipFile file, const char* filename, co
                                  NULL, 0, VERSIONMADEBY, 0, zip64);
 }
 
-extern int ZEXPORT zipOpenNewFileInZip (zipFile file, const char* filename, const zip_fileinfo* zipfi,
+extern int zipOpenNewFileInZip (zipFile file, const char* filename, const zip_fileinfo* zipfi,
                                         const void* extrafield_local, uInt size_extrafield_local,
                                         const void*extrafield_global, uInt size_extrafield_global,
                                         const char* comment, int method, int level)
@@ -1399,7 +1399,7 @@ local int zip64FlushWriteBuffer(zip64_internal* zi)
     return err;
 }
 
-extern int ZEXPORT zipWriteInFileInZip (zipFile file,const void* buf,unsigned int len)
+extern int zipWriteInFileInZip (zipFile file,const void* buf,unsigned int len)
 {
     zip64_internal* zi;
     int err=ZIP_OK;
@@ -1506,12 +1506,12 @@ extern int ZEXPORT zipWriteInFileInZip (zipFile file,const void* buf,unsigned in
     return err;
 }
 
-extern int ZEXPORT zipCloseFileInZipRaw (zipFile file, uLong uncompressed_size, uLong crc32)
+extern int zipCloseFileInZipRaw (zipFile file, uLong uncompressed_size, uLong crc32)
 {
     return zipCloseFileInZipRaw64 (file, uncompressed_size, crc32);
 }
 
-extern int ZEXPORT zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_size, uLong crc32)
+extern int zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_size, uLong crc32)
 {
     zip64_internal* zi;
     ZPOS64_T compressed_size;
@@ -1747,7 +1747,7 @@ extern int ZEXPORT zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_s
     return err;
 }
 
-extern int ZEXPORT zipCloseFileInZip (zipFile file)
+extern int zipCloseFileInZip (zipFile file)
 {
     return zipCloseFileInZipRaw (file,0,0);
 }
@@ -1879,7 +1879,7 @@ int Write_GlobalComment(zip64_internal* zi, const char* global_comment)
   return err;
 }
 
-extern int ZEXPORT zipClose (zipFile file, const char* global_comment)
+extern int zipClose (zipFile file, const char* global_comment)
 {
     zip64_internal* zi;
     int err = 0;
@@ -1948,7 +1948,7 @@ extern int ZEXPORT zipClose (zipFile file, const char* global_comment)
     return err;
 }
 
-extern int ZEXPORT zipRemoveExtraInfoBlock (char* pData, int* dataLen, short sHeader)
+extern int zipRemoveExtraInfoBlock (char* pData, int* dataLen, short sHeader)
 {
   char* p = pData;
   int size = 0;

@@ -1,18 +1,32 @@
-cmake_minimum_required(VERSION 2.4.4)
+cmake_minimum_required(VERSION 3.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
-project(zlib C)
+project(
+    zlib 
+    VERSION 1.2.8
+    LANGUAGES C
+)
+
+if (MSVC)
+    if (NOT DEFINED ARCH)
+        string(TOLOWER ${MSVC_C_ARCHITECTURE_ID} ARCH)
+    endif()
+
+    # use boost convention - you cant' get the VC compiler without VS
+    if (NOT DEFINED MSVCVER)
+        math(EXPR MSVCVER "(${MSVC_VERSION} / 10) - 60")
+    endif()
+    
+    # add the runtiume version and target architecture into the DLL name per MS
+    # guidelines
+    set(MSVC_SHARED_SUFFIX_BASE "${PROJECT_VERSION_MAJOR}-vc${MSVCVER}-mt-${ARCH}")
+    set(CMAKE_SHARED_LIBRARY_SUFFIX "${MSVC_SHARED_SUFFIX_BASE}.dll")
+endif()
 
 set(VERSION "1.2.8")
 
 option(ASM686 "Enable building i686 assembly implementation")
 option(AMD64 "Enable building amd64 assembly implementation")
-
-set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
-set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
-set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
-set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
 include(CheckTypeSize)
 include(CheckFunctionExists)
@@ -21,8 +35,6 @@ include(CheckCSourceCompiles)
 enable_testing()
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
-check_include_file(stdint.h    HAVE_STDINT_H)
-check_include_file(stddef.h    HAVE_STDDEF_H)
 
 #
 # Check to see if we have large file support
@@ -34,12 +46,7 @@ set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1)
 if(HAVE_SYS_TYPES_H)
     list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_SYS_TYPES_H)
 endif()
-if(HAVE_STDINT_H)
-    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDINT_H)
-endif()
-if(HAVE_STDDEF_H)
-    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDDEF_H)
-endif()
+
 check_type_size(off64_t OFF64_T)
 if(HAVE_OFF64_T)
    add_definitions(-D_LARGEFILE64_SOURCE=1)
@@ -104,6 +111,10 @@ set(ZLIB_PRIVATE_HDRS
     inftrees.h
     trees.h
     zutil.h
+    contrib/minizip/ioapi.h
+    contrib/minizip/iowin32.h
+    contrib/minizip/unzip.h
+    contrib/minizip/zip.h
 )
 set(ZLIB_SRCS
     adler32.c
@@ -121,13 +132,11 @@ set(ZLIB_SRCS
     trees.c
     uncompr.c
     zutil.c
+    contrib/minizip/ioapi.c
+    contrib/minizip/iowin32.c
+    contrib/minizip/unzip.c
+    contrib/minizip/zip.c
 )
-
-if(NOT MINGW)
-    set(ZLIB_DLL_SRCS
-        win32/zlib1.rc # If present will override custom build rule below.
-    )
-endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
     if(ASM686)
@@ -154,12 +163,34 @@ if(MSVC)
         set(ZLIB_ASMS
 			contrib/masmx64/gvmat64.asm
 			contrib/masmx64/inffasx64.asm
+            contrib/masmx64/inffas8664.c
 		)
     endif()
 
 	if(ZLIB_ASMS)
-		add_definitions(-DASMV -DASMINF)
+		add_definitions(-DASMV -DASMINF -I.)
 	endif()
+
+    set(VER_PRODUCTNAME_STR "zlib data compression library")
+    set(VER_LEGALCOPYRIGHT_STR "(C) 1995-2013 Jean-loup Gailly & Mark Adler")
+    set(VER_STR "${PROJECT_VERSION}")
+    set(VER_NUM "${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0")
+    
+    set(local_lib_name zlib)
+    
+    set(VER_ORIGINALFILENAME_STR "${local_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(VER_INTERNALNAME_STR ${local_lib_name})
+    set(VER_FILEDESCRIPTION_STR "${local_lib_name} Dynamic Link Library")
+    configure_file(
+         ${CMAKE_SOURCE_DIR}/version.rc.cmakein
+         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+         @ONLY
+     )         
+    set(ZLIB_DLL_SRCS
+        ${CMAKE_SOURCE_DIR}/zlibvc.def
+        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    )
+    
 endif()
 
 # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
@@ -185,8 +216,9 @@ endif(MINGW)
 
 add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+#set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 set_target_properties(zlib PROPERTIES SOVERSION 1)
+
 
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
@@ -205,25 +237,25 @@ if(UNIX)
    if(NOT APPLE)
      set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
    endif()
-elseif(BUILD_SHARED_LIBS AND WIN32)
-    # Creates zlib1.dll when building shared library version
-    set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
+elseif(MSVC)
+    set_target_properties(${local_lib_name} PROPERTIES PDB_NAME "${local_lib_name}${MSVC_SHARED_SUFFIX_BASE}")
+
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
     install(TARGETS zlib zlibstatic
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib )
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-    install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION "${INSTALL_INC_DIR}")
+    install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION include)
 endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
-    install(FILES zlib.3 DESTINATION "${INSTALL_MAN_DIR}/man3")
+    install(FILES zlib.3 DESTINATION share/man/man3)
 endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
-    install(FILES ${ZLIB_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+    install(FILES ${ZLIB_PC} DESTINATION share/pkgconfig)
 endif()
 
 #============================================================================

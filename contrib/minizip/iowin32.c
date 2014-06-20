@@ -32,13 +32,13 @@
 #endif
 #endif
 
-voidpf  ZCALLBACK win32_open_file_func  OF((voidpf opaque, const char* filename, int mode));
-uLong   ZCALLBACK win32_read_file_func  OF((voidpf opaque, voidpf stream, void* buf, uLong size));
-uLong   ZCALLBACK win32_write_file_func OF((voidpf opaque, voidpf stream, const void* buf, uLong size));
-ZPOS64_T ZCALLBACK win32_tell64_file_func  OF((voidpf opaque, voidpf stream));
-long    ZCALLBACK win32_seek64_file_func  OF((voidpf opaque, voidpf stream, ZPOS64_T offset, int origin));
-int     ZCALLBACK win32_close_file_func OF((voidpf opaque, voidpf stream));
-int     ZCALLBACK win32_error_file_func OF((voidpf opaque, voidpf stream));
+voidpf  ZCALLBACK win32_open_file_func  (voidpf opaque, const char* filename, int mode);
+uLong   ZCALLBACK win32_read_file_func  (voidpf opaque, voidpf stream, void* buf, uLong size);
+uLong   ZCALLBACK win32_write_file_func (voidpf opaque, voidpf stream, const void* buf, uLong size);
+ZPOS64_T ZCALLBACK win32_tell64_file_func  (voidpf opaque, voidpf stream);
+long    ZCALLBACK win32_seek64_file_func  (voidpf opaque, voidpf stream, ZPOS64_T offset, int origin);
+int     ZCALLBACK win32_close_file_func (voidpf opaque, voidpf stream);
+int     ZCALLBACK win32_error_file_func (voidpf opaque, voidpf stream);
 
 typedef struct
 {
@@ -243,7 +243,7 @@ static BOOL MySetFilePointerEx(HANDLE hFile, LARGE_INTEGER pos, LARGE_INTEGER *n
     return SetFilePointerEx(hFile, pos, newPos, dwMoveMethod);
 #else
     LONG lHigh = pos.HighPart;
-    DWORD dwNewPos = SetFilePointer(hFile, pos.LowPart, &lHigh, FILE_CURRENT);
+    DWORD dwNewPos = SetFilePointer(hFile, pos.LowPart, &lHigh, dwMoveMethod);
     BOOL fOk = TRUE;
     if (dwNewPos == 0xFFFFFFFF)
         if (GetLastError() != NO_ERROR)
@@ -370,7 +370,7 @@ long ZCALLBACK win32_seek64_file_func (voidpf opaque, voidpf stream,ZPOS64_T off
     {
         LARGE_INTEGER pos;
         pos.QuadPart = offset;
-        if (!MySetFilePointerEx(hFile, pos, NULL, FILE_CURRENT))
+        if (!MySetFilePointerEx(hFile, pos, NULL, dwMoveMethod))
         {
             DWORD dwErr = GetLastError();
             ((WIN32FILE_IOWIN*)stream) -> error=(int)dwErr;

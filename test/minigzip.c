@@ -9,8 +9,7 @@
  * full-featured gzip. No attempt is made to deal with file systems
  * limiting names to 14 or 8+3 characters, etc... Error checking is
  * very limited. So use minigzip only for testing; use gzip for the
- * real thing. On MSDOS, use only on file names without extension
- * or in pipe mode.
+ * real thing. 
  */
 
 /* @(#) $Id$ */
@@ -18,10 +17,8 @@
 #include "zlib.h"
 #include <stdio.h>
 
-#ifdef STDC
-#  include <string.h>
-#  include <stdlib.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
 
 #ifdef USE_MMAP
 #  include <sys/types.h>
@@ -29,7 +26,7 @@
 #  include <sys/stat.h>
 #endif
 
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
+#if defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
 #  ifdef UNDER_CE
@@ -44,22 +41,9 @@
 #  define snprintf _snprintf
 #endif
 
-#ifdef VMS
-#  define unlink delete
-#  define GZ_SUFFIX "-gz"
-#endif
-#ifdef RISCOS
-#  define unlink remove
-#  define GZ_SUFFIX "-gz"
-#  define fileno(file) file->__file
-#endif
-#if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
-#  include <unix.h> /* for fileno */
-#endif
-
 #if !defined(Z_HAVE_UNISTD_H) && !defined(_LARGEFILE64_SOURCE)
 #ifndef WIN32 /* unlink already in stdio.h for WIN32 */
-  extern int unlink OF((const char *));
+  extern int unlink(const char *);
 #endif
 #endif
 
@@ -135,13 +119,6 @@ static void pwinerror (s)
 #define BUFLEN      16384
 #define MAX_NAME_LEN 1024
 
-#ifdef MAXSEG_64K
-#  define local static
-   /* Needed for systems with limitation on stack size. */
-#else
-#  define local
-#endif
-
 #ifdef Z_SOLO
 /* for Z_SOLO, create simplified gz* functions using deflate and inflate */
 
@@ -149,8 +126,8 @@ static void pwinerror (s)
 #  include <unistd.h>       /* for unlink() */
 #endif
 
-void *myalloc OF((void *, unsigned, unsigned));
-void myfree OF((void *, void *));
+void *myalloc(void *, unsigned, unsigned);
+void myfree(void *, void *);
 
 void *myalloc(q, n, m)
     void *q;
@@ -175,9 +152,9 @@ typedef struct gzFile_s {
     z_stream strm;
 } *gzFile;
 
-gzFile gzopen OF((const char *, const char *));
-gzFile gzdopen OF((int, const char *));
-gzFile gz_open OF((const char *, int, const char *));
+gzFile gzopen(const char *, const char *);
+gzFile gzdopen(int, const char *);
+gzFile gz_open(const char *, int, const char *);
 
 gzFile gzopen(path, mode)
 const char *path;
@@ -231,7 +208,7 @@ gzFile gz_open(path, fd, mode)
     return gz;
 }
 
-int gzwrite OF((gzFile, const void *, unsigned));
+int gzwrite(gzFile, const void *, unsigned);
 
 int gzwrite(gz, buf, len)
     gzFile gz;
@@ -255,7 +232,7 @@ int gzwrite(gz, buf, len)
     return len;
 }
 
-int gzread OF((gzFile, void *, unsigned));
+int gzread(gzFile, void *, unsigned);
 
 int gzread(gz, buf, len)
     gzFile gz;
@@ -292,7 +269,7 @@ int gzread(gz, buf, len)
     return len - strm->avail_out;
 }
 
-int gzclose OF((gzFile));
+int gzclose(gzFile);
 
 int gzclose(gz)
     gzFile gz;
@@ -321,7 +298,7 @@ int gzclose(gz)
     return Z_OK;
 }
 
-const char *gzerror OF((gzFile, int *));
+const char *gzerror(gzFile, int *);
 
 const char *gzerror(gz, err)
     gzFile gz;
@@ -335,15 +312,15 @@ const char *gzerror(gz, err)
 
 char *prog;
 
-void error            OF((const char *msg));
-void gz_compress      OF((FILE   *in, gzFile out));
+void error           (const char *msg);
+void gz_compress     (FILE   *in, gzFile out);
 #ifdef USE_MMAP
-int  gz_compress_mmap OF((FILE   *in, gzFile out));
+int  gz_compress_mmap(FILE   *in, gzFile out);
 #endif
-void gz_uncompress    OF((gzFile in, FILE   *out));
-void file_compress    OF((char  *file, char *mode));
-void file_uncompress  OF((char  *file));
-int  main             OF((int argc, char *argv[]));
+void gz_uncompress   (gzFile in, FILE   *out);
+void file_compress   (char  *file, char *mode);
+void file_uncompress (char  *file);
+int  main            (int argc, char *argv[]);
 
 /* ===========================================================================
  * Display error message and exit
@@ -363,7 +340,7 @@ void gz_compress(in, out)
     FILE   *in;
     gzFile out;
 {
-    local char buf[BUFLEN];
+    char buf[BUFLEN];
     int len;
     int err;
 
@@ -431,7 +408,7 @@ void gz_uncompress(in, out)
     gzFile in;
     FILE   *out;
 {
-    local char buf[BUFLEN];
+    char buf[BUFLEN];
     int len;
     int err;
 
@@ -458,7 +435,7 @@ void file_compress(file, mode)
     char  *file;
     char  *mode;
 {
-    local char outfile[MAX_NAME_LEN];
+    char outfile[MAX_NAME_LEN];
     FILE  *in;
     gzFile out;
 
@@ -467,12 +444,7 @@ void file_compress(file, mode)
         exit(1);
     }
 
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
     snprintf(outfile, sizeof(outfile), "%s%s", file, GZ_SUFFIX);
-#else
-    strcpy(outfile, file);
-    strcat(outfile, GZ_SUFFIX);
-#endif
 
     in = fopen(file, "rb");
     if (in == NULL) {
@@ -496,7 +468,7 @@ void file_compress(file, mode)
 void file_uncompress(file)
     char  *file;
 {
-    local char buf[MAX_NAME_LEN];
+    char buf[MAX_NAME_LEN];
     char *infile, *outfile;
     FILE  *out;
     gzFile in;
@@ -507,11 +479,7 @@ void file_uncompress(file)
         exit(1);
     }
 
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
     snprintf(buf, sizeof(buf), "%s", file);
-#else
-    strcpy(buf, file);
-#endif
 
     if (len > SUFFIX_LEN && strcmp(file+len-SUFFIX_LEN, GZ_SUFFIX) == 0) {
         infile = file;
@@ -520,11 +488,7 @@ void file_uncompress(file)
     } else {
         outfile = file;
         infile = buf;
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
         snprintf(buf + len, sizeof(buf) - len, "%s", GZ_SUFFIX);
-#else
-        strcat(infile, GZ_SUFFIX);
-#endif
     }
     in = gzopen(infile, "rb");
     if (in == NULL) {
@@ -562,11 +526,7 @@ int main(argc, argv)
     gzFile file;
     char *bname, outmode[20];
 
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
     snprintf(outmode, sizeof(outmode), "%s", "wb6 ");
-#else
-    strcpy(outmode, "wb6 ");
-#endif
 
     prog = argv[0];
     bname = strrchr(argv[0], '/');

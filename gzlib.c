@@ -5,7 +5,7 @@
 
 #include "gzguts.h"
 
-#if defined(_WIN32) && !defined(__BORLANDC__)
+#if defined(_WIN32)
 #  define LSEEK _lseeki64
 #else
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
@@ -16,8 +16,8 @@
 #endif
 
 /* Local functions */
-local void gz_reset OF((gz_statep));
-local gzFile gz_open OF((const void *, int, const char *));
+local void gz_reset (gz_statep);
+local gzFile gz_open (const void *, int, const char *);
 
 #if defined UNDER_CE
 
@@ -210,11 +210,7 @@ local gzFile gz_open(path, fd, mode)
             *(state->path) = 0;
     else
 #endif
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
         snprintf(state->path, len + 1, "%s", (const char *)path);
-#else
-        strcpy(state->path, path);
-#endif
 
     /* compute the flags for open() */
     oflag =
@@ -265,7 +261,7 @@ local gzFile gz_open(path, fd, mode)
 }
 
 /* -- see zlib.h -- */
-gzFile ZEXPORT gzopen(path, mode)
+gzFile gzopen(path, mode)
     const char *path;
     const char *mode;
 {
@@ -273,7 +269,7 @@ gzFile ZEXPORT gzopen(path, mode)
 }
 
 /* -- see zlib.h -- */
-gzFile ZEXPORT gzopen64(path, mode)
+gzFile gzopen64(path, mode)
     const char *path;
     const char *mode;
 {
@@ -281,7 +277,7 @@ gzFile ZEXPORT gzopen64(path, mode)
 }
 
 /* -- see zlib.h -- */
-gzFile ZEXPORT gzdopen(fd, mode)
+gzFile gzdopen(fd, mode)
     int fd;
     const char *mode;
 {
@@ -290,11 +286,8 @@ gzFile ZEXPORT gzdopen(fd, mode)
 
     if (fd == -1 || (path = (char *)malloc(7 + 3 * sizeof(int))) == NULL)
         return NULL;
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
+
     snprintf(path, 7 + 3 * sizeof(int), "<fd:%d>", fd); /* for debugging */
-#else
-    sprintf(path, "<fd:%d>", fd);   /* for debugging */
-#endif
     gz = gz_open(path, fd, mode);
     free(path);
     return gz;
@@ -302,7 +295,7 @@ gzFile ZEXPORT gzdopen(fd, mode)
 
 /* -- see zlib.h -- */
 #ifdef _WIN32
-gzFile ZEXPORT gzopen_w(path, mode)
+gzFile gzopen_w(path, mode)
     const wchar_t *path;
     const char *mode;
 {
@@ -311,7 +304,7 @@ gzFile ZEXPORT gzopen_w(path, mode)
 #endif
 
 /* -- see zlib.h -- */
-int ZEXPORT gzbuffer(file, size)
+int gzbuffer(file, size)
     gzFile file;
     unsigned size;
 {
@@ -336,7 +329,7 @@ int ZEXPORT gzbuffer(file, size)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzrewind(file)
+int gzrewind(file)
     gzFile file;
 {
     gz_statep state;
@@ -359,7 +352,7 @@ int ZEXPORT gzrewind(file)
 }
 
 /* -- see zlib.h -- */
-z_off64_t ZEXPORT gzseek64(file, offset, whence)
+z_off64_t gzseek64(file, offset, whence)
     gzFile file;
     z_off64_t offset;
     int whence;
@@ -436,7 +429,7 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
 }
 
 /* -- see zlib.h -- */
-z_off_t ZEXPORT gzseek(file, offset, whence)
+z_off_t gzseek(file, offset, whence)
     gzFile file;
     z_off_t offset;
     int whence;
@@ -448,7 +441,7 @@ z_off_t ZEXPORT gzseek(file, offset, whence)
 }
 
 /* -- see zlib.h -- */
-z_off64_t ZEXPORT gztell64(file)
+z_off64_t gztell64(file)
     gzFile file;
 {
     gz_statep state;
@@ -465,7 +458,7 @@ z_off64_t ZEXPORT gztell64(file)
 }
 
 /* -- see zlib.h -- */
-z_off_t ZEXPORT gztell(file)
+z_off_t gztell(file)
     gzFile file;
 {
     z_off64_t ret;
@@ -475,7 +468,7 @@ z_off_t ZEXPORT gztell(file)
 }
 
 /* -- see zlib.h -- */
-z_off64_t ZEXPORT gzoffset64(file)
+z_off64_t gzoffset64(file)
     gzFile file;
 {
     z_off64_t offset;
@@ -498,7 +491,7 @@ z_off64_t ZEXPORT gzoffset64(file)
 }
 
 /* -- see zlib.h -- */
-z_off_t ZEXPORT gzoffset(file)
+z_off_t gzoffset(file)
     gzFile file;
 {
     z_off64_t ret;
@@ -508,7 +501,7 @@ z_off_t ZEXPORT gzoffset(file)
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT gzeof(file)
+int gzeof(file)
     gzFile file;
 {
     gz_statep state;
@@ -525,7 +518,7 @@ int ZEXPORT gzeof(file)
 }
 
 /* -- see zlib.h -- */
-const char * ZEXPORT gzerror(file, errnum)
+const char * gzerror(file, errnum)
     gzFile file;
     int *errnum;
 {
@@ -546,7 +539,7 @@ const char * ZEXPORT gzerror(file, errnum)
 }
 
 /* -- see zlib.h -- */
-void ZEXPORT gzclearerr(file)
+void gzclearerr(file)
     gzFile file;
 {
     gz_statep state;
@@ -603,14 +596,8 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
         state->err = Z_MEM_ERROR;
         return;
     }
-#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
     snprintf(state->msg, strlen(state->path) + strlen(msg) + 3,
              "%s%s%s", state->path, ": ", msg);
-#else
-    strcpy(state->msg, state->path);
-    strcat(state->msg, ": ");
-    strcat(state->msg, msg);
-#endif
     return;
 }
 
